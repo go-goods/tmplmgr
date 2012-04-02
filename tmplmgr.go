@@ -10,6 +10,8 @@ import (
 	"sync"
 )
 
+//Mode is a type that represents one of two modes, Production or Development.
+//See CompileMode for details.
 type Mode bool
 
 const (
@@ -19,10 +21,17 @@ const (
 
 var compile_mode = Production
 
+//CompileMode sets the compilation mode for the package. In Development mode,
+//templates read in and compile each file it needs to execute every time it needs
+//to execute, always getting the most recent changes. In Production mode, templates
+//read and compile each file they need only the first time, caching the results
+//for subsequent Execute calls. By default, the package is in Production mode.
 func CompileMode(mode Mode) {
 	compile_mode = mode
 }
 
+//Template is the type that represents a template. It is created by using the
+//Parse function and dependencies are attached through Blocks and Call.
 type Template struct {
 	t *template.Template
 
@@ -45,6 +54,9 @@ func Parse(file string) *Template {
 	}
 }
 
+//Blocks attaches all of the block definitions in files that match the glob 
+//patterns to the template for every Execute call so the base template can
+//evoke them.
 func (t *Template) Blocks(globs ...string) *Template {
 	t.compile_lock.Lock()
 	defer t.compile_lock.Unlock()
@@ -54,6 +66,8 @@ func (t *Template) Blocks(globs ...string) *Template {
 	return t
 }
 
+//Call attaches a function to the template under the specified name for every
+//Execute call so the base template can call them.
 func (t *Template) Call(name string, fnc interface{}) *Template {
 	t.compile_lock.Lock()
 	defer t.compile_lock.Unlock()
@@ -63,6 +77,9 @@ func (t *Template) Call(name string, fnc interface{}) *Template {
 	return t
 }
 
+//Compile precompiles the template before Execute. Execute will call Compile if
+//any Execute level globs are passed in, if the Template has had functions added
+//or blocks added since the last Compile, or if the mode is in Development.
 func (t *Template) Compile() (err error) {
 	t.compile_lock.Lock()
 	defer t.compile_lock.Unlock()
@@ -117,6 +134,11 @@ func (t *Template) getCachedGlobs(globs []string) (tmpl *template.Template, err 
 	return
 }
 
+//Execute runs the template with the specified context attaching all the block
+//definitions in the files that match the given globs sending the output to
+//w. Any errors during the compilation of any files that have to be compiled
+//(see the discussion on Modes) or during the execution of the template are
+//returned.
 func (t *Template) Execute(w io.Writer, ctx interface{}, globs ...string) (err error) {
 	if t.dirty || compile_mode == Development {
 		err = t.Compile()
