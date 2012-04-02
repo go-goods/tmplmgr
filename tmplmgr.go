@@ -46,6 +46,8 @@ type Template struct {
 	compile_lock sync.RWMutex
 }
 
+//Parse creates a new Template with the specified file acting as the base
+//template.
 func Parse(file string) *Template {
 	return &Template{
 		base:     file,
