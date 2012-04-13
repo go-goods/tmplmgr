@@ -94,9 +94,9 @@ func (t *Template) Compile() (err error) {
 			err = fmt.Errorf("%v", e)
 		}
 	}()
-	tmpl.Funcs(t.funcs)
 
 	tmpl := template.New(filepath.Base(t.base))
+	tmpl.Funcs(t.funcs)
 	tmpl.Delims(`{%`, `%}`)
 	tmpl, err = tmpl.ParseFiles(t.base)
 	if err != nil {
