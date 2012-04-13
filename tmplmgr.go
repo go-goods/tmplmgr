@@ -88,13 +88,6 @@ func (t *Template) Compile() (err error) {
 
 	log.Printf("compiling %s %s", t.base, t.blocks)
 
-	tmpl := template.New(filepath.Base(t.base))
-	tmpl.Delims(`{%`, `%}`)
-	tmpl, err = tmpl.ParseFiles(t.base)
-	if err != nil {
-		return
-	}
-
 	//catch the panic from funcs if theres an invalid func map
 	defer func() {
 		if e := recover(); e != nil {
@@ -102,6 +95,13 @@ func (t *Template) Compile() (err error) {
 		}
 	}()
 	tmpl.Funcs(t.funcs)
+
+	tmpl := template.New(filepath.Base(t.base))
+	tmpl.Delims(`{%`, `%}`)
+	tmpl, err = tmpl.ParseFiles(t.base)
+	if err != nil {
+		return
+	}
 
 	for _, glob := range t.blocks {
 		tmpl, err = tmpl.ParseGlob(glob)
